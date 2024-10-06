@@ -1,8 +1,11 @@
 blueprint:
   name: Lüftungsempfehlung basierend auf Taupunkt
-  description: >
-    Diese Automation berechnet den Taupunkt innen und außen und schaltet einen Schalter ein oder aus,
-    um anzuzeigen, ob Lüften empfohlen wird, um Schimmelbildung zu verhindern.
+  description:
+    "Diese Automation berechnet den Taupunkt innen und außen und schaltet
+    einen Schalter ein oder aus, um anzuzeigen, ob Lüften empfohlen wird, um Schimmelbildung
+    zu verhindern.
+
+    "
   domain: automation
   input:
     inside_temperature_sensor:
@@ -10,35 +13,54 @@ blueprint:
       description: Sensor für die Innentemperatur
       selector:
         entity:
-          domain: sensor
-          device_class: temperature
+          filter:
+            domain:
+              - sensor
+            device_class:
+              - temperature
+          multiple: false
     inside_humidity_sensor:
       name: Innenluftfeuchtigkeitssensor
       description: Sensor für die Innenluftfeuchtigkeit
       selector:
         entity:
-          domain: sensor
-          device_class: humidity
+          filter:
+            domain:
+              - sensor
+            device_class:
+              - humidity
+          multiple: false
     outside_temperature_sensor:
       name: Außentemperatursensor
       description: Sensor für die Außentemperatur
       selector:
         entity:
-          domain: sensor
-          device_class: temperature
+          filter:
+            domain:
+              - sensor
+            device_class:
+              - temperature
+          multiple: false
     outside_humidity_sensor:
       name: Außenluftfeuchtigkeitssensor
       description: Sensor für die Außenluftfeuchtigkeit
       selector:
         entity:
-          domain: sensor
-          device_class: humidity
-    ventilation_input_booleanh:
+          filter:
+            domain: sensor
+            device_class:
+              - humidity
+          multiple: false
+    ventilation_switch:
       name: Schalter für Lüftungsempfehlung
       description: Schalter oder Helfer, der anzeigt, ob Lüften empfohlen wird
       selector:
         entity:
-          domain: input_boolean
+          filter:
+            domain:
+              - input_boolean
+          multiple: false
+  source_url: https://github.com/LukasHoermanns/Homeassistant_blueprints/blob/main/ventilation_recommendation_dew_point.yaml
 trigger:
   - platform: state
     entity_id:
@@ -64,11 +86,11 @@ action:
           - condition: template
             value_template: "{{ dewpoint_out | float < dewpoint_in | float }}"
         sequence:
-          - service: input_boolean.turn_on
+          - action: input_boolean.turn_on
             target:
-              entity_id: !input ventilation_input_boolean
+              entity_id: !input ventilation_switch
     default:
-      - service: input_boolean.turn_off
+      - action: input_boolean.turn_off
         target:
-          entity_id: !input ventilation_input_boolean
+          entity_id: !input ventilation_switch
 mode: single
