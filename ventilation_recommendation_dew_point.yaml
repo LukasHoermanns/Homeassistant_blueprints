@@ -33,12 +33,12 @@ blueprint:
         entity:
           domain: sensor
           device_class: humidity
-    ventilation_switch:
+    ventilation_input_booleanh:
       name: Schalter für Lüftungsempfehlung
       description: Schalter oder Helfer, der anzeigt, ob Lüften empfohlen wird
       selector:
         entity:
-          domain: switch
+          domain: input_boolean
 trigger:
   - platform: state
     entity_id:
@@ -64,11 +64,11 @@ action:
           - condition: template
             value_template: "{{ dewpoint_out | float < dewpoint_in | float }}"
         sequence:
-          - service: switch.turn_on
+          - service: input_boolean.turn_on
             target:
-              entity_id: !input ventilation_switch
+              entity_id: !input ventilation_input_boolean
     default:
-      - service: switch.turn_off
+      - service: input_boolean.turn_off
         target:
-          entity_id: !input ventilation_switch
+          entity_id: !input ventilation_input_boolean
 mode: single
