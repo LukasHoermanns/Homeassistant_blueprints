@@ -1,0 +1,74 @@
+blueprint:
+  name: Lüftungsempfehlung basierend auf Taupunkt
+  description: >
+    Diese Automation berechnet den Taupunkt innen und außen und schaltet einen Schalter ein oder aus,
+    um anzuzeigen, ob Lüften empfohlen wird, um Schimmelbildung zu verhindern.
+  domain: automation
+  input:
+    inside_temperature_sensor:
+      name: Innentemperatursensor
+      description: Sensor für die Innentemperatur
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+    inside_humidity_sensor:
+      name: Innenluftfeuchtigkeitssensor
+      description: Sensor für die Innenluftfeuchtigkeit
+      selector:
+        entity:
+          domain: sensor
+          device_class: humidity
+    outside_temperature_sensor:
+      name: Außentemperatursensor
+      description: Sensor für die Außentemperatur
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+    outside_humidity_sensor:
+      name: Außenluftfeuchtigkeitssensor
+      description: Sensor für die Außenluftfeuchtigkeit
+      selector:
+        entity:
+          domain: sensor
+          device_class: humidity
+    ventilation_switch:
+      name: Schalter für Lüftungsempfehlung
+      description: Schalter oder Helfer, der anzeigt, ob Lüften empfohlen wird
+      selector:
+        entity:
+          domain: switch
+trigger:
+  - platform: state
+    entity_id:
+      - !input inside_temperature_sensor
+      - !input inside_humidity_sensor
+      - !input outside_temperature_sensor
+      - !input outside_humidity_sensor
+condition: []
+action:
+  - variables:
+      a: 17.27
+      b: 237.7
+      T_in: "{{ states(!input 'inside_temperature_sensor') | float }}"
+      RH_in: "{{ states(!input 'inside_humidity_sensor') | float }}"
+      T_out: "{{ states(!input 'outside_temperature_sensor') | float }}"
+      RH_out: "{{ states(!input 'outside_humidity_sensor') | float }}"
+      alpha_in: "{{ ((a * T_in) / (b + T_in)) + log(RH_in / 100) }}"
+      dewpoint_in: "{{ (b * alpha_in) / (a - alpha_in) }}"
+      alpha_out: "{{ ((a * T_out) / (b + T_out)) + log(RH_out / 100) }}"
+      dewpoint_out: "{{ (b * alpha_out) / (a - alpha_out) }}"
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ dewpoint_out | float < dewpoint_in | float }}"
+        sequence:
+          - service: switch.turn_on
+            target:
+              entity_id: !input ventilation_switch
+    default:
+      - service: switch.turn_off
+        target:
+          entity_id: !input ventilation_switch
+mode: single
